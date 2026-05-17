@@ -253,3 +253,8 @@ Try asking Claude:
 ## License
 
 [MIT](LICENSE) — use it freely, share it, improve it.
+
+---
+
+შექმნილია სიყვარულით ბათუმიდან <3  
+Made with love from Batumi <3
