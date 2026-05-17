@@ -1,6 +1,55 @@
-# Matsne.gov.ge MCP Server
+<p align="center">
+  <h1 align="center">⚖️ Matsne.gov.ge MCP Server</h1>
+  <p align="center">
+    <strong>Search, read and analyze Georgia's official legislative database — through AI</strong><br>
+    <em>საქართველოს საკანონმდებლო მაცნე — ნებისმიერი AI ასისტენტიდან</em>
+  </p>
+  <p align="center">
+    <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="MIT License"></a>
+    <img src="https://img.shields.io/badge/Python-3.10+-brightgreen" alt="Python 3.10+">
+    <img src="https://img.shields.io/badge/MCP-1.0+-purple" alt="MCP 1.0+">
+  </p>
+</p>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+<p align="center"><strong><code>🇬🇪 შექმნილია სიყვარულით ბათუმიდან, საქართველო — Made with love from Batumi, Georgia</code></strong></p>
+
+---
+
+## ✨ One-click setup — copy this to Claude
+
+> **Non-technical?** Just copy the box below, paste it to Claude or any AI assistant, and it will set up everything for you — download, install, configure, and test.
+
+<pre>
+I want to use the Matsne.gov.ge MCP server from https://github.com/sitechfromgeorgia/matsne-gov-ge-mcp
+
+Please help me set it up. Here's what I need you to do:
+
+1. Check if Python 3.10+ is installed — if not, tell me to download it from https://www.python.org/downloads/
+2. Check if `uv` is installed — if not:
+   - Windows (PowerShell): `powershell -c "irm https://astral.sh/uv/install.ps1 | iex"`
+   - Mac/Linux: `curl -LsSf https://astral.sh/uv/install.sh | sh`
+3. Download the project:
+   - If git is installed: `git clone https://github.com/sitechfromgeorgia/matsne-gov-ge-mcp`
+   - Otherwise: download the ZIP from the GitHub page and extract it
+4. Navigate to the project folder and run: `uv run mcp_server.py`
+5. Tell me the full folder path so I can configure Claude Desktop
+6. Tell me to:
+   - Open Claude Desktop → Settings → Developer → Edit Config
+   - Add this (replace PATH with my actual folder path):
+```json
+{
+  "mcpServers": {
+    "matsne-ge": {
+      "command": "uv",
+      "args": ["--directory", "PATH", "run", "mcp_server.py"]
+    }
+  }
+}
+```
+7. Restart Claude Desktop and verify the 🔧 icon appears
+
+Please walk me through each step and check as we go.
+</pre>
 
 ---
 
@@ -8,181 +57,36 @@
 
 ### რა არის ეს?
 
-ეს არის **MCP (Model Context Protocol) სერვერი**, რომელიც საშუალებას აძლევს ხელოვნურ ინტელექტს (Claude, VS Code-ის AI ასისტენტები და სხვა) მოძებნოს, წაიკითხოს და გააანალიზოს დოკუმენტები **matsne.gov.ge**-დან — საქართველოს საკანონმდებლო მაცნე.
+ეს არის **MCP (Model Context Protocol) სერვერი**, რომელიც საშუალებას აძლევს ნებისმიერ AI ასისტენტს (Claude Desktop, VS Code, Cursor, Windsurf) **მოძებნოს, წაიკითხოს და გააანალიზოს** დოკუმენტები [matsne.gov.ge](https://matsne.gov.ge)-დან — საქართველოს საკანონმდებლო მაცნე.
 
-მაგალითად, შეგიძლიათ სთხოვოთ AI-ს:
+**What?** An MCP server that connects AI assistants to Georgia's official legislative database.
 
-- _"მოძებნე დღევანდელი გამოქვეყნებული კანონები"_
-- _"მოიძიე დოკუმენტები პერსონალურ მონაცემებზე"_
-- _"რა წერია 6840140 ნომერ დოკუმენტში?"_
-- _"გააანალიზე ეს კანონი და მომაწოდე რეზიუმე"_
+**Why?** იმისთვის, რომ AI-ს შეეძლოს ქართული კანონმდებლობის რეალურ დროში ძებნა, წაკითხვა და ანალიზი — მარტივი, ბუნებრივი ენით.
 
-### შესაძლებლობები
+### 🛠️ ხელმისაწვდომი ინსტრუმენტები
 
-| ინსტრუმენტი | რას აკეთებს |
+| Tool | რას აკეთებს |
 |---|---|
-| `matsne_suggest` | სწრაფი ძებნა საკვანძო სიტყვით (ავტომატური დასრულება) |
-| `matsne_search` | დოკუმენტების ძებნა ფილტრებით (თარიღი, ტიპი, ორგანო, ნომერი) |
-| `matsne_get_document` | დოკუმენტის სრული ინფორმაცია (მეტამონაცემები + ტექსტი + სტრუქტურა) |
-| `matsne_get_tree` | დოკუმენტის სტრუქტურის ხე (მუხლები, თავები, ნაწილები) |
-| `matsne_get_back_references` | რომელი დოკუმენტები ეყრდნობა/ეხება ამ დოკუმენტს |
-| `matsne_get_comments` | დოკუმენტის კომენტარები |
-| `matsne_get_linked` | დოკუმენტის კონკრეტული ნაწილის ტექსტი (მაგ., კონკრეტული მუხლი) |
-| `matsne_search_by_keyword` | საკვანძო სიტყვით ძებნა (აბრუნებს მხოლოდ აქტიურ დოკუმენტებს) |
-| `matsne_has_today` | არის თუ არა დღეს გამოქვეყნებული დოკუმენტები |
-| `matsne_today_documents` | დღეს გამოქვეყნებული დოკუმენტების სია |
+| `matsne_suggest` | სწრაფი ძებნა საკვანძო სიტყვით |
+| `matsne_search` | ძებნა ფილტრებით (თარიღი, ტიპი, ორგანო, ნომერი) |
+| `matsne_get_document` | დოკუმენტი: მეტამონაცემები + ტექსტი + სტრუქტურა + კომენტარები |
+| `matsne_get_tree` | დოკუმენტის სტრუქტურის ხე (მუხლები, თავები) |
+| `matsne_get_back_references` | რომელი დოკუმენტები ეყრდნობა ამას |
+| `matsne_get_comments` | კომენტარები |
+| `matsne_get_linked` | კონკრეტული მუხლის ტექსტი |
+| `matsne_search_by_keyword` | მხოლოდ აქტიური დოკუმენტების ძებნა |
+| `matsne_has_today` | არის თუ არა დღევანდელი დოკუმენტები |
+| `matsne_today_documents` | დღეს გამოქვეყნებული დოკუმენტები |
 
-### მოთხოვნები
+### 📖 ინსტალაცია
 
-- **Python** 3.10 ან უფრო ახალი → [python.org/downloads](https://www.python.org/downloads/)
-- **uv** — Python-ის პროექტების მენეჯერი (იხ. ქვემოთ)
+#### 1. Python-ის დაყენება
 
-### ინსტალაცია (ნაბიჯ-ნაბიჯ)
+👉 [python.org/downloads](https://www.python.org/downloads/) — ჩამოტვირთეთ და დააყენეთ. **Windows-ზე მონიშნეთ "Add Python to PATH".**
 
-#### ნაბიჯი 1: Python-ის დაყენება
+#### 2. uv-ის დაყენება
 
-თუ Python არ გაქვთ დაყენებული:
-
-1. გადადით ბმულზე: [https://www.python.org/downloads/](https://www.python.org/downloads/)
-2. დააჭირეთ ყვითელ ღილაკს "Download Python"
-3. გახსენით ჩამოტვირთული ფაილი
-4. **მნიშვნელოვანი:** მონიშნეთ "Add Python to PATH" (ბოლოში)
-5. დააჭირეთ "Install Now"
-
-#### ნაბიჯი 2: uv-ის დაყენება
-
-**Windows-ზე:** გახსენით PowerShell (დააჭირეთ Windows ღილაკს, ჩაწერეთ "PowerShell" და გახსენით), ჩაწერეთ:
-
-```powershell
-powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
-```
-
-**Mac/Linux-ზე:** გახსენით ტერმინალი და ჩაწერეთ:
-
-```sh
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
-
-დაყენების შემდეგ გადატვირთეთ ტერმინალი/ფანჯარა.
-
-#### ნაბიჯი 3: პროექტის ჩამოტვირთვა
-
-**Git-ით (თუ იცნობთ):**
-```sh
-git clone https://github.com/YOUR_USERNAME/matsne-gov-ge-mcp
-cd matsne-gov-ge-mcp
-```
-
-**ZIP-ით (მარტივი გზა):**
-1. გადადით GitHub გვერდზე
-2. დააჭირეთ ღილაკს "Code" → "Download ZIP"
-3. გახსენით ZIP ფაილი
-4. გადადით გახსნილ საქაღალდეში
-
-#### ნაბიჯი 4: MCP სერვერის გაშვება
-
-გახსენით ტერმინალი/კონსოლი პროექტის საქაღალდეში და ჩაწერეთ:
-
-```sh
-uv run mcp_server.py
-```
-
-თუ ყველაფერი სწორადაა, ვერაფერს დაინახავთ — ეს ნორმალურია, სერვერი მუშაობს ფონზე. გამოსასვლელად დააჭირეთ `Ctrl+C`.
-
-### Claude Desktop-ში გამოყენება
-
-1. გახსენით **Claude Desktop**
-2. დააჭირეთ Settings (პარამეტრები) → Developer (დეველოპერი)
-3. **Edit Config**-ში ჩასვით ეს კონფიგურაცია:
-
-```json
-{
-  "mcpServers": {
-    "matsne-ge": {
-      "command": "uv",
-      "args": ["--directory", "C:\\Users\\თქვენი_მომხმარებელი\\matsne-gov-ge-mcp", "run", "mcp_server.py"]
-    }
-  }
-}
-```
-
-**მნიშვნელოვანი:** `C:\\Users\\თქვენი_მომხმარებელი\\...` — შეცვალეთ იმ გზით, სადაც პროექტი ჩამოტვირთეთ.
-
-მაგალითად, თუ ჩამოტვირთეთ დესკტოპზე:
-
-```json
-{
-  "mcpServers": {
-    "matsne-ge": {
-      "command": "uv",
-      "args": ["--directory", "C:\\Users\\ირაკლი\\Desktop\\matsne-gov-ge-mcp", "run", "mcp_server.py"]
-    }
-  }
-}
-```
-
-4. გადატვირთეთ Claude Desktop
-5. თუ ზედა მარცხენა კუთხეში გამოჩნდება 🔧 (ხელის ხატულა), მიმაგრებულია წარმატებით
-
-### ინსტრუქციის მაგალითები
-
-შეგიძლიათ სცადოთ ეს მოთხოვნები Claude-ში:
-
-- _"მოძებნე დღევანდელი გამოქვეყნებული დოკუმენტები matsne.gov.ge-დან"_
-- _"მოიძიე კანონები შრომის შესახებ, რომელიც ბოლო 30 დღეში გამოქვეყნდა"_
-- _"რა წერია დოკუმენტში #6840140? გააანალიზე"_
-- _"მომაწოდე ინფორმაცია 6840140 დოკუმენტზე: ვინ მიიღო, როდის გამოქვეყნდა, ტიპი"_
-- _"მოძებნე 'პერსონალური მონაცემები' და მომაწოდე აქტიური კანონების სია"_
-
-### Troubleshooting
-
-| პრობლემა | გამოსავალი |
-|---|---|
-| "uv is not recognized" | uv არ დაყენებულა → გადახედეთ ნაბიჯ 2-ს. გადატვირთეთ ტერმინალი. |
-| "Python not found" | Python არ დაყენებულა → python.org-დან ჩამოტვირთეთ. დარწმუნდით რომ "Add to PATH" მონიშნეთ. |
-| "No module named mcp" | გაუშვით `uv run mcp_server.py` (uv ავტომატურად დააყენებს ყველაფერს) |
-| Claude-ში 🔧 არ ჩანს | შეამოწმეთ JSON config-ში ბილიკი სწორია თუ არა |
-| "Access Denied" matsne-დან | API endpoint-ები მუშაობს, ეს მხოლოდ HTML გვერდის ბლოკირებაა. `get_document()` მაინც მიიღებს ტექსტს linked fragments-ის მეშვეობით. |
-
----
-
-## 🇬🇧 English
-
-### What is this?
-
-An **MCP (Model Context Protocol) server** for [matsne.gov.ge](https://matsne.gov.ge) — Georgia's official legislative database. It lets AI assistants (Claude Desktop, VS Code, etc.) search, read, and analyze Georgian legislation through a simple API.
-
-### Features
-
-| Tool | Description |
-|---|---|
-| `matsne_suggest` | Fast keyword autocomplete search |
-| `matsne_search` | Full-text search with filters (date, type, organ, number) |
-| `matsne_get_document` | Full document: metadata + text + structure + back-references + comments |
-| `matsne_get_tree` | Document structure tree (articles, chapters, parts) |
-| `matsne_get_back_references` | Which documents cite or reference this document |
-| `matsne_get_comments` | User comments on a document |
-| `matsne_get_linked` | Text of a specific document part (e.g., a specific article) |
-| `matsne_search_by_keyword` | Keyword search returning only active documents |
-| `matsne_has_today` | Check if documents were published today |
-| `matsne_today_documents` | List today's published documents |
-| `matsne://document/{id}` (resource) | Document as structured JSON data |
-| `matsne://today` (resource) | Today's documents as JSON |
-
-### Requirements
-
-- **Python** 3.10+ → [python.org/downloads](https://www.python.org/downloads/)
-- **uv** — Python project manager (see installation below)
-
-### Installation
-
-#### Step 1: Install Python
-
-Download from [python.org/downloads](https://www.python.org/downloads/). **Important on Windows:** check "Add Python to PATH" during installation.
-
-#### Step 2: Install uv
-
-**Windows (PowerShell):**
+**Windows — PowerShell-ში ჩაწერეთ:**
 ```powershell
 powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
@@ -192,69 +96,128 @@ powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-Restart your terminal after installation.
+> **დააყენების შემდეგ გადატვირთეთ ტერმინალი.**
 
-#### Step 3: Download the project
+#### 3. პროექტის ჩამოტვირთვა
 
+**Git-ით:**
 ```sh
-git clone https://github.com/YOUR_USERNAME/matsne-gov-ge-mcp
+git clone https://github.com/sitechfromgeorgia/matsne-gov-ge-mcp
 cd matsne-gov-ge-mcp
 ```
 
-Or download as ZIP from GitHub and extract.
+**ZIP-ით:** GitHub-ზე → `Code` → `Download ZIP` → გახსენით
 
-#### Step 4: Run the MCP server
+#### 4. MCP სერვერის გაშვება
 
 ```sh
 uv run mcp_server.py
 ```
 
-The server runs silently in the background (stdio mode). Press `Ctrl+C` to stop.
+> **ვერაფერს ხედავთ?** ეს ნორმალურია — სერვერი მუშაობს ფონზე. გამოსასვლელად `Ctrl+C`.
 
-### Claude Desktop Configuration
+#### 5. Claude Desktop-თან დაკავშირება
 
-1. Open **Claude Desktop** → Settings → Developer → Edit Config
-2. Add this configuration (update the path to your project folder):
+**Claude Desktop** → Settings → Developer → Edit Config → ჩასვით:
 
 ```json
 {
   "mcpServers": {
     "matsne-ge": {
       "command": "uv",
-      "args": ["--directory", "C:\\Users\\YOUR_USERNAME\\matsne-gov-ge-mcp", "run", "mcp_server.py"]
+      "args": ["--directory", "C:\\Users\\თქვენი_სახელი\\matsne-gov-ge-mcp", "run", "mcp_server.py"]
     }
   }
 }
 ```
 
-3. Restart Claude Desktop
-4. You should see a 🔧 (wrench icon) in the top-left corner when connected
+> **მნიშვნელოვანი:** `C:\\Users\\თქვენი_სახელი\\...` — შეცვალეთ იმ გზით, სადაც პროექტი ჩამოტვირთეთ.
 
-### Example Prompts
+**გადატვირთეთ Claude Desktop.** თუ 🔧 გამოჩნდა — მზადაა 🎉
 
-Try asking Claude:
+### 💬 ინსტრუქციის მაგალითები
+
+სცადეთ ეს მოთხოვნები:
+
+- _"მოძებნე დღევანდელი გამოქვეყნებული დოკუმენტები"_
+- _"მოიძიე კანონები შრომის შესახებ ბოლო 30 დღეში"_
+- _"რა წერია 6840140 დოკუმენტში? გააანალიზე"_
+- _"ვინ მიიღო 6840140, როდის გამოქვეყნდა, რა ტიპისაა?"_
+- _"მოძებნე 'პერსონალური მონაცემები' — აქტიური კანონების სია"_
+- _"შეამოწმე რა კანონები გამოქვეყნდა დღეს"_
+
+### ⚠️ Troubleshooting
+
+| პრობლემა | გამოსავალი |
+|---|---|
+| "uv is not recognized" | uv არ დაყენებულა, გადახედეთ ნაბიჯ 2-ს |
+| "Python not found" | Python არ დაყენებულა, ან "Add to PATH" არ მონიშნეთ |
+| "No module named mcp" | გაუშვით `uv run mcp_server.py` (არა `python mcp_server.py`) |
+| 🔧 არ ჩანს Claude-ში | JSON config-ში ბილიკი შეამოწმეთ |
+| "Access Denied" | API endpoint-ები მუშაობს — მთავარი ფუნქციონალი ხელმისაწვდომია |
+
+---
+
+## 🇬🇧 English
+
+### What is this?
+
+An **MCP server** that connects AI assistants to [matsne.gov.ge](https://matsne.gov.ge) — Georgia's official legislative database. Search, read, and analyze Georgian laws through natural conversation.
+
+### Tools
+
+| Tool | Purpose |
+|---|---|
+| `matsne_suggest` | Fast keyword autocomplete |
+| `matsne_search` | Filtered search (date, type, organ, pagination) |
+| `matsne_get_document` | Full document: meta + text + tree + comments |
+| `matsne_get_tree` | Document structure (articles, chapters) |
+| `matsne_get_back_references` | Citing documents |
+| `matsne_get_comments` | User comments |
+| `matsne_get_linked` | Specific article text |
+| `matsne_search_by_keyword` | Active documents by keyword |
+| `matsne_has_today` | Check today's publications |
+| `matsne_today_documents` | Today's documents |
+
+### Quick install
+
+```sh
+pip install uv  # or install from https://docs.astral.sh/uv/
+git clone https://github.com/sitechfromgeorgia/matsne-gov-ge-mcp
+cd matsne-gov-ge-mcp
+uv run mcp_server.py
+```
+
+Then add to Claude Desktop:
+
+```json
+{
+  "mcpServers": {
+    "matsne-ge": {
+      "command": "uv",
+      "args": ["--directory", "/path/to/matsne-gov-ge-mcp", "run", "mcp_server.py"]
+    }
+  }
+}
+```
+
+### Example prompts
 
 - _"Search for today's published documents on matsne.gov.ge"_
 - _"Find laws about personal data published in the last month"_
 - _"Get full information on document #6840140 and summarize it"_
-- _"What documents were published today?"_
-
-### Troubleshooting
-
-| Problem | Solution |
-|---|---|
-| "uv is not recognized" | uv not installed → reinstall and restart terminal |
-| "Python not found" | Install Python with "Add to PATH" checked |
-| "No module named mcp" | Always use `uv run mcp_server.py` (not plain `python`) |
-| Claude doesn't show wrench icon | Check the path in your JSON config |
 
 ---
 
-## License
+## 📄 License
 
-[MIT](LICENSE) — use it freely, share it, improve it.
+[MIT](LICENSE) — use freely, share, improve.
 
 ---
 
-შექმნილია სიყვარულით ბათუმიდან <3  
-Made with love from Batumi <3
+<p align="center">
+  <strong><code>🇬🇪 შექმნილია სიყვარულით ბათუმიდან, საქართველო</code></strong><br>
+  <strong><code>🇬🇪 Made with love from Batumi, Georgia</code></strong><br>
+  <br>
+  <sub>If this tool helps you, star it on GitHub ⭐ — it means a lot to a small dev from Batumi</sub>
+</p>
