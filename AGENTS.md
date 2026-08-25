@@ -1,23 +1,31 @@
-# AGENTS.md — Matsne.gov.ge API Wrapper
+# AGENTS.md — Georgia Legal Ecosystem MCP (Matsne + Courts)
 
 ## What this is
 
-Pure stdlib Python wrapper for matsne.gov.ge's undocumented JSON API (Georgian legislative database),
-plus an MCP server exposing it as tools/resources for AI agents.
+Pure stdlib Python wrappers for Georgia's legal ecosystem, plus a single MCP server exposing
+everything as tools/resources for AI agents:
 
-**Files:** `matsne_api.py` (802 lines), `SKILL.md` (reference docs), `mcp_server.py` (MCP server),
-`pyproject.toml`, `AGENTS.md`, `README.md`, `LICENSE`
+- **`matsne_api.py`** — matsne.gov.ge legislation (საკანონმდებლო მაცნე)
+- **`court_api.py`** — court practice: `EcdCourtAPI` (ecd.court.ge common courts) +
+  `SupremeCourtAPI` (supremecourt.ge cassation + Grand Chamber)
+- **`higher_courts_api.py`** — apex courts: `ConstitutionalCourtAPI` (constcourt.ge) +
+  `EchrAPI` (HUDOC — European Court of Human Rights)
+
+**Files:** `matsne_api.py`, `court_api.py`, `higher_courts_api.py`, `SKILL.md` (reference docs),
+`mcp_server.py` (MCP server), `pyproject.toml`, `AGENTS.md`, `README.md`, `LICENSE`
 
 ## Key facts
 
-- **API wrapper: zero dependencies** — stdlib only (`json`, `re`, `time`, `urllib`, `dataclasses`, `typing`)
-- **MCP server: single dependency** (`mcp>=1.0.0`) listed in `pyproject.toml`
+- **API wrappers: zero dependencies** — stdlib only (`json`, `re`, `time`, `urllib`, `html`, `dataclasses`, `typing`)
+- **MCP server: single dependency** (`mcp>=1.0.0,<2.0.0`) listed in `pyproject.toml` (2.x removed `fastmcp`)
 - **No tests, no CI/CD, no git repo**
 
 ## Commands
 
 ```sh
-python matsne_api.py                        # runs comprehensive live API test against doc 6840140
+python matsne_api.py                        # live test: matsne legislation
+python court_api.py                         # live test: ecd + supreme + grand chamber
+python higher_courts_api.py                 # live test: constcourt + echr (HUDOC)
 uv run mcp_server.py                        # start MCP server (stdio transport)
 uv run python -c "from mcp_server import *" # verify imports
 ```
@@ -44,12 +52,34 @@ uv run python -c "from mcp_server import *" # verify imports
 - Rate limit: 0.3s between requests (configurable), exponential backoff on retries (2 retries)
 - Cookie tracking for session persistence across requests
 
+### Court Practice Wrapper (`court_api.py`)
+
+- `_BaseAPI` — shared rate-limit (0.3s), cookie tracking, retry, UTF-8 JSON/HTML handling
+- `EcdCourtAPI` — ecd.court.ge (ASP.NET): POST+JSON endpoints for classifiers, decision search,
+  full-text, court-act verification (barcode)
+- `SupremeCourtAPI` — supremecourt.ge (Laravel-style): GET+HTML endpoints for cassation search,
+  full text, download, and Grand Chamber (PDF lists)
+- **`authority_level`** on every result: 5=Grand Chamber (binding), 4=Supreme cassation,
+  3=appeals, 2=first instance — agents weigh precedent by this
+
+### Higher Courts Wrapper (`higher_courts_api.py`)
+
+- `ConstitutionalCourtAPI` — constcourt.ge (Laravel + DataTables): GET+HTML search of judicial
+  acts (`/ka/judicial-acts`), results link to `?legal={id}` detail pages
+- `EchrAPI` — HUDOC (hudoc.echr.coe.int): GET+JSON metadata search (`/app/query/results`) +
+  full text (`/app/conversion/docx/html/body?library=ECHR&id={itemid}`); rate-limits hard, so
+  default delay is 0.5s
+- **`authority_level`**: 7=ECHR (supranational, binding on Georgia), 6=Constitutional Court
+  (can strike down laws) — above all the domestic court levels in `court_api.py`
+
 ### MCP Server (`mcp_server.py`)
 
-- Imports `MatsneAPI` — API wrapper is untouched, MCP is a pure transport layer
-- 10 tools (suggest, search, get_document, get_tree, back_references, comments, linked, search_by_keyword, has_today, today_documents)
-- 2 resources (`matsne://document/{id}`, `matsne://today`)
-- Tools named `matsne_*` to avoid namespace conflicts in clients
+- Imports `MatsneAPI`, `EcdCourtAPI`, `SupremeCourtAPI`, `ConstitutionalCourtAPI`, `EchrAPI` —
+  wrappers untouched, MCP is a pure transport layer
+- 10 `matsne_*` + 4 `court_*` + 4 `supreme_*` + 2 `constitutional_*` + 2 `echr_*` tools
+- 7 resources: `matsne://document/{id}`, `matsne://today`, `court://decision/{id}/{instance}`,
+  `supreme://case/{id}/{palata}`, `constitutional://act/{legal_id}`, `echr://case/{itemid}`
+- Tools prefixed by source to avoid namespace conflicts
 
 ## Gotchas
 
@@ -60,6 +90,33 @@ uv run python -c "from mcp_server import *" # verify imports
 - Titles may contain `<b>` tags from keyword highlighting — strip HTML when parsing
 - `is-ajax=1` param converts search results from HTML to JSON
 - All date params use `DD/MM/YYYY` format
+
+### Court practice gotchas
+
+- **ecd.court.ge** is ASP.NET POST+JSON — always send `Content-Type: application/json; charset=utf-8`; dates are `YYYY-MM-DD` (or `null`); decision dates come back as C# `/Date(ms)/` (use `_parse_csharp_date`)
+- **supremecourt.ge** is GET+HTML — Georgian full-text must be URL-encoded (`urllib.parse.urlencode`); dates are `YYYY/MM/DD`; `supreme_api_token` is decorative (ignored)
+- **Grand Chamber decisions are NOT in `/ka/cases` search** — they live on static `/decisions-grand-chamber/...` pages as PDFs; `grand_chamber()` scrapes their titles + PDF URLs
+- **Grand Chamber 'norms' category** (`didi-palatis-gadatsyvetilebebshi-gamoyenebul-normata-ganmartebebi`) is a single PDF of compiled binding norm interpretations — the highest authority below the Constitution/law
+- **`court_verify_act` requires BOTH barcode and case number** — one alone returns an error page
+
+### Higher-courts gotchas
+
+- **constcourt.ge** renders results server-side only when a search is performed — a bare
+  `/ka/judicial-acts` returns "record not found"; pass `fullsearch`/`intext`/`number`
+- **constcourt full-text search** needs `intext` + `intextsearch=intextsearch` (the wrapper adds it)
+- **constcourt detail pages** use `?legal={id}` (not a path segment); act text lives in
+  `id="printablePageContent"` (extract with balanced-div walk)
+- **HUDOC rate-limits hard** — bursty requests return empty/404; `EchrAPI` defaults to 0.5s delay
+- **HUDOC query** must include `contentsitename:ECHR` and exclude `doctype:PR` (press releases) —
+  the wrapper builds this; itemids look like `001-57574`
+- **HUDOC full text** is an HTML body (numeric entities) — run through `_html_to_text` (unescape)
+
+## PRO access
+
+- **Internal JSON API** bypasses Matsne.gov.ge's PRO/subscription paywall for **most** documents — you can retrieve full text and metadata for PRO-only docs via the API wrapper even when the website blocks them
+- **Exception:** Some PRO documents returned by `suggest`/`search` return `Access Denied` from the internal API too (e.g., 6382847, 6427001) — typically recent internal government reports or administrative orders
+- The `suggest` endpoint (keyword search) finds PRO documents by title/ID even when their content is inaccessible
+- **Strategy:** if `get_document()` fails with `Access Denied`, the doc still exists and can remain in results with metadata only (no text available)
 
 ## Reference
 

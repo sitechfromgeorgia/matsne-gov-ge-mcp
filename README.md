@@ -78,6 +78,31 @@ Please walk me through each step and check as we go.
 | `matsne_has_today` | არის თუ არა დღევანდელი დოკუმენტები |
 | `matsne_today_documents` | დღეს გამოქვეყნებული დოკუმენტები |
 
+### ⚖️ სასამართლო პრაქტიკა (ახალი)
+
+| Tool | რას აკეთებს |
+|---|---|
+| `court_search_decisions` | საერთო სასამართლოების გადაწყვეტილებების ძებნა (საქმის ნომერი, თარიღი, ინსტანცია, სასამართლო, მუხლი, ტექსტი) |
+| `court_get_decision` | გადაწყვეტილების სრული ტექსტი |
+| `court_classifiers` | ფილტრების ლექსიკონები (ინსტანციები, სასამართლოები, კატეგორიები, მუხლები) |
+| `court_verify_act` | სასამართლო აქტის გადამოწმება შტრიხკოდით + საქმის ნომრით |
+| `supreme_search` | უზენაესი სასამართლოს გადაწყვეტილებების ძებნა (პალატა, მოსამართლე, შედეგი, ტექსტი) |
+| `supreme_get_case` | უზენაესის გადაწყვეტილების სრული ტექსტი |
+| `supreme_classifiers` | შედეგის/საჩივრის სახის კოდები |
+| `supreme_grand_chamber` | დიდი პალატის გადაწყვეტილებები + ნორმათა განმარტებები (სავალდებულო) |
+
+ყველა სასამართლო შედეგს აქვს `authority_level` ველი (5=დიდი პალატა → 2=პირველი ინსტანცია),
+რაც AI-ს საშუალებას აძლევს სწორად შეაფასოს პრეცედენტის წონა.
+
+### 🏛️ უმაღლესი სასამართლოები (ახალი)
+
+| Tool | რას აკეთებს |
+|---|---|
+| `constitutional_search_acts` | საკონსტიტუციო სასამართლოს აქტების ძებნა (სახელი, ნომერი, ტექსტი) |
+| `constitutional_get_act` | საკონსტიტუციო აქტის სრული ტექსტი |
+| `echr_search` | ადამიანის უფლებათა ევროპული სასამართლოს (HUDOC) ძებნა |
+| `echr_get_case` | ECHR გადაწყვეტილების სრული ტექსტი |
+
 ### 📖 ინსტალაცია
 
 #### 1. Python-ის დაყენება
@@ -178,6 +203,31 @@ An **MCP server** that connects AI assistants to [matsne.gov.ge](https://matsne.
 | `matsne_search_by_keyword` | Active documents by keyword |
 | `matsne_has_today` | Check today's publications |
 | `matsne_today_documents` | Today's documents |
+
+### ⚖️ Court practice (new)
+
+| Tool | Purpose |
+|---|---|
+| `court_search_decisions` | Common-court decisions search (case no, date, instance, court, article, text) |
+| `court_get_decision` | Full decision text |
+| `court_classifiers` | Filter dictionaries (instances, courts, categories, articles) |
+| `court_verify_act` | Verify a court act by barcode + case number |
+| `supreme_search` | Supreme Court decision search (chamber, judge, result, text) |
+| `supreme_get_case` | Full Supreme Court decision text |
+| `supreme_classifiers` | Result / appeal-type codes |
+| `supreme_grand_chamber` | Grand Chamber decisions + norm interpretations (binding) |
+
+Every court result carries `authority_level` (5=Grand Chamber → 2=first instance)
+so agents weigh precedent correctly.
+
+### 🏛️ Apex courts (new)
+
+| Tool | Purpose |
+|---|---|
+| `constitutional_search_acts` | Constitutional Court acts search (name, number, text) |
+| `constitutional_get_act` | Full Constitutional Court act text |
+| `echr_search` | European Court of Human Rights (HUDOC) search |
+| `echr_get_case` | Full ECHR decision text |
 
 ### Quick install
 

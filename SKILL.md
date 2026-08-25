@@ -1,9 +1,10 @@
 ---
 name: matsne-gov-ge-scraping
 description: >
-  Complete API wrapper for matsne.gov.ge — Georgia's official legislative database.
-  Reverse-engineered from Drupal's internal JavaScript. Replaces fragile HTML scraping
-  with structured JSON API calls. Includes 12+ endpoints, rate limiting, retry logic.
+  Complete API wrappers for Georgia's legal ecosystem — matsne.gov.ge legislation,
+  ecd.court.ge common-court decisions/acts, and supremecourt.ge cassation + Grand
+  Chamber decisions. Reverse-engineered undocumented APIs. Includes 12+ matsne
+  endpoints, court classifiers/search/full-text, rate limiting, retry logic.
 ---
 
 # Matsne.gov.ge — Complete API Reference
@@ -343,6 +344,107 @@ print(f"Text: {len(doc['text'])} chars")
 ## Files
 
 - **Wrapper:** `matsne_api.py`
+- **Court wrapper:** `court_api.py`
 - **MCP Server:** `mcp_server.py`
 - **Skill:** `SKILL.md`
 - **AGENTS.md** — agent instructions (OpenCode / Claude Code)
+
+---
+
+# Court Practice API Reference (`court_api.py`)
+
+Two classes cover Georgia's court practice. **`authority_level`** is attached to every result:
+
+| Level | Authority |
+|-------|-----------|
+| 5 | Supreme Court **Grand Chamber** (დიდი პალატა) — binding on all common courts |
+| 4 | Supreme Court chamber (cassation) |
+| 3 | Appeals court (second instance) |
+| 2 | First-instance court |
+
+## EcdCourtAPI — ecd.court.ge (common courts)
+
+ASP.NET, all endpoints are **POST + JSON** (`Content-Type: application/json; charset=utf-8`).
+
+| Method | Endpoint | Returns |
+|--------|----------|---------|
+| `get_instances()` | `/Classifiers/Instances` | `[{Id, Name, Fullname}]` — 1=first, 2=appeals, 3=supreme |
+| `get_courts(instance_id)` | `/Classifiers/Courts` | courts filtered by instance |
+| `get_case_categories(instance_id)` | `/Classifiers/CaseCategories` | case categories |
+| `get_litigation_types(instance_id, case_category_id)` | `/Classifiers/LitigationTypes` | dispute category / article (მუხლი) |
+| `get_decision_types(instance_id)` | `/Classifiers/DecisionTypes` | decision types |
+| `search_decisions(...)` | `/Decision/DecisionDocuments` | `{total, items}` — full search |
+| `get_decision(decision_document_id, instance_id)` | `/Decision/DecisionDocumentText` | `{text, pdf_url}` — full text |
+| `verify_act(barcode, case_no)` | `/FinalDocument/FinalDecisionDocument` | court-act verification |
+
+`search_decisions` params: `case_no`, `date_from`/`date_to` (`YYYY-MM-DD`), `instance_id`,
+`court_code`, `case_category_id`, `litigation_type_id`, `type_id`, `texts` (list), `skip`, `take`.
+
+Decision dates come back as C# `/Date(1588260918000)/` — parsed to `YYYY-MM-DD` by `_parse_csharp_date`.
+
+## SupremeCourtAPI — supremecourt.ge (Supreme Court)
+
+Laravel-style, endpoints are **GET + HTML** (Georgian params must be URL-encoded).
+
+| Method | Endpoint | Returns |
+|--------|----------|---------|
+| `search_cases(...)` | `/ka/getCases` | `{total, cases}` — cassation search |
+| `get_case(case_id, palata)` | `/ka/fullcase/{id}/{palata}` | `{text, ...}` — full text |
+| `grand_chamber(category)` | `/decisions-grand-chamber/{slug}` | `{items: [{title, url}]}` — binding decisions (PDFs) |
+
+`search_cases` params: `palata` (0=ადმინისტრაციული, 1=სამოქალაქო, 2=სისხლის), `page` (1-indexed),
+`texts` (list, up to 6 full-text terms), `case_number`, `date_from`/`date_to` (`YYYY/MM/DD`),
+`judge`, `result` (see `RESULT_CODES`), `appeal_type` (see `APPEAL_TYPE_CODES`), `category`, `kind`.
+
+`grand_chamber` categories: `civil`, `criminal`, `admin`, `norms`. `norms` returns the single
+compiled PDF of binding norm interpretations — the highest authority below the Constitution/law.
+
+---
+
+# Higher Courts API Reference (`higher_courts_api.py`)
+
+Two apex-court sources. `authority_level` continues the hierarchy upward:
+
+| Level | Authority |
+|-------|-----------|
+| 7 | European Court of Human Rights (ECHR) — supranational, binding on Georgia |
+| 6 | Constitutional Court of Georgia — can strike down laws |
+| 5 | Supreme Court Grand Chamber |
+| 4 | Supreme Court chamber |
+
+## ConstitutionalCourtAPI — constcourt.ge
+
+Laravel + DataTables. Endpoints are **GET + HTML**, results render server-side only when a
+search is performed.
+
+| Method | Endpoint | Returns |
+|--------|----------|---------|
+| `search_acts(...)` | `/ka/judicial-acts` (GET params) | `{items: [{id, title, summary, url}], count}` |
+| `get_act(legal_id)` | `/ka/judicial-acts?legal={id}` | `{id, title, text, url}` — full act text |
+
+`search_acts` params: `fullsearch` (name/number/result), `intext` (full-text), `number`,
+`name`, `date_from`/`date_to` (site format), `quantity` (10–100), `sort` (`desc`/`asc`).
+The wrapper auto-adds `intextsearch=intextsearch` when `intext` is set. Act text lives in
+`id="printablePageContent"` (extracted with a balanced-div walk).
+
+## EchrAPI — hudoc.echr.coe.int (HUDOC)
+
+GET + JSON. HUDOC rate-limits aggressively, so the default delay is 0.5s.
+
+| Method | Endpoint | Returns |
+|--------|----------|---------|
+| `search(...)` | `/app/query/results?query=...&select=...` | `{total, items}` — metadata search |
+| `get_case(itemid)` | `/app/conversion/docx/html/body?library=ECHR&id={itemid}` | `{itemid, text, url}` — full text |
+
+`search` params: `respondent` (state code, e.g. `GEO`), `article` (e.g. `6`, `6-1`, `8`),
+`appno` (application number), `text` (free-text keyword), `language` (`ENG`/`FRE`),
+`start`/`length` (pagination, `length` max 500), and `query` (raw HUDOC query override).
+
+The wrapper builds the mandatory query parts — `contentsitename:ECHR` plus exclusion of press
+releases (`doctype:PR`, `HFCOMOLD`, `HECOMOLD`) — so results are real judgments. `itemid`s look
+like `001-57574`. Full text is an HTML body with numeric entities — `_html_to_text` unescapes it.
+
+**Rate-limit guidance for agents:** HUDOC returns empty/404 on bursty parallel requests. Always
+call the `echr_*` tools **sequentially** (never fire several in one batch), and if a call returns
+an empty/error result, pause a few seconds and retry once. This is server-side throttling, not a
+wrapper bug — the 0.5s delay only helps for serial calls.
