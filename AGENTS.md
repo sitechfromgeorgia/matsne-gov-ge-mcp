@@ -16,9 +16,10 @@ everything as tools/resources for AI agents:
 
 ## Key facts
 
-- **API wrappers: zero dependencies** — stdlib only (`json`, `re`, `time`, `urllib`, `html`, `dataclasses`, `typing`)
-- **MCP server: single dependency** (`mcp>=1.0.0,<2.0.0`) listed in `pyproject.toml` (2.x removed `fastmcp`)
-- **No tests, no CI/CD, no git repo**
+- **API wrappers: zero dependencies** — stdlib only (`json`, `re`, `time`, `urllib`, `html`, `dataclasses`, `typing`). Keep it that way; don't add deps to the wrappers.
+- **MCP server: single dependency** — `mcp>=1.0.0,<2.0.0` in `pyproject.toml`. The `<2.0.0` pin is required: mcp 2.x removed `mcp.server.fastmcp`.
+- **No tests, no CI/CD** — verify changes by running each wrapper's `__main__` live test (hits the real internet; HUDOC rate-limits if run repeatedly).
+- **Git:** remote `https://github.com/sitechfromgeorgia/matsne-gov-ge-mcp.git`, branch `master`. Author identity `Sitech From Georgia <sitechfromgeorgia@example.com>` is set in repo-local config. `docs/` and `index.html` are unrelated untracked scratch files — stage files explicitly, never `git add -A`.
 
 ## Commands
 
@@ -29,6 +30,10 @@ python higher_courts_api.py                 # live test: constcourt + echr (HUDO
 uv run mcp_server.py                        # start MCP server (stdio transport)
 uv run python -c "from mcp_server import *" # verify imports
 ```
+
+On Windows the `__main__` tests print Georgian: `court_api.py` and `higher_courts_api.py`
+reconfigure stdout to UTF-8, but `matsne_api.py` does not — if it raises `UnicodeEncodeError`,
+run `$env:PYTHONIOENCODING="utf-8"; python matsne_api.py`.
 
 ### Claude Desktop config
 
@@ -54,7 +59,9 @@ uv run python -c "from mcp_server import *" # verify imports
 
 ### Court Practice Wrapper (`court_api.py`)
 
-- `_BaseAPI` — shared rate-limit (0.3s), cookie tracking, retry, UTF-8 JSON/HTML handling
+- `_BaseAPI` — shared rate-limit (0.3s), cookie tracking, retry, UTF-8 JSON/HTML handling.
+  **This is the shared core** — `higher_courts_api.py` imports `_BaseAPI` + `_html_to_text`
+  from here, so don't rename/move them without updating that import.
 - `EcdCourtAPI` — ecd.court.ge (ASP.NET): POST+JSON endpoints for classifiers, decision search,
   full-text, court-act verification (barcode)
 - `SupremeCourtAPI` — supremecourt.ge (Laravel-style): GET+HTML endpoints for cassation search,
@@ -77,7 +84,7 @@ uv run python -c "from mcp_server import *" # verify imports
 - Imports `MatsneAPI`, `EcdCourtAPI`, `SupremeCourtAPI`, `ConstitutionalCourtAPI`, `EchrAPI` —
   wrappers untouched, MCP is a pure transport layer
 - 10 `matsne_*` + 4 `court_*` + 4 `supreme_*` + 2 `constitutional_*` + 2 `echr_*` tools
-- 7 resources: `matsne://document/{id}`, `matsne://today`, `court://decision/{id}/{instance}`,
+- 6 resources: `matsne://document/{id}`, `matsne://today`, `court://decision/{id}/{instance}`,
   `supreme://case/{id}/{palata}`, `constitutional://act/{legal_id}`, `echr://case/{itemid}`
 - Tools prefixed by source to avoid namespace conflicts
 
